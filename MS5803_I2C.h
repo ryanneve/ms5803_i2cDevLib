@@ -74,36 +74,39 @@ class MS5803 {
     MS5803();
     MS5803(uint8_t address);
     
-    void initialize();
+    void initialize(uint8_t model);
     bool testConnection();
     int32_t getTemperature();
-    int64_t getPressure();
-    void debugTemperature();
+    int32_t getTemperature(bool debug);
+    int32_t getPressure();
     void debugCalConstants();
+    void debugTemperature();
     void reset();
     float temp_C;
     float press_mBar;
   private:
     // Calibration Constants
-    uint16_t _c1_SENSt1; // Pressure Sensitivity
-    uint16_t _c2_OFFt1;  // Pressure Offset
-    uint16_t _c3_TCS;    // Temperature coefficient of pressure sensitivity
-    uint16_t _c4_TCO;    // Temperature coefficient of pressure offset
-    uint16_t _c5_Tref;   // Reference Temperature
-    uint16_t _c6_TEMPSENS;   // Temperature coefficient of the temperature
+    int32_t _c1_SENSt1; // Pressure Sensitivity
+    int32_t _c2_OFFt1;  // Pressure Offset
+    int32_t _c3_TCS;    // Temperature coefficient of pressure sensitivity
+    int32_t _c4_TCO;    // Temperature coefficient of pressure offset
+    int32_t _c5_Tref;   // Reference Temperature
+    int32_t _c6_TEMPSENS;   // Temperature coefficient of the temperature
     // pressure and temperature data
-    uint32_t _d1_pressure;
-    uint32_t _d2_temperature;
+    int64_t _d1_pressure;
+    int64_t _d2_temperature;
     // Calculated values
     int32_t _dT;
     int32_t _TEMP;       // Actual temperature -40 to 85C with .01 resolution (divide by 100)
     // Temperature compensated pressure
     int64_t _OFF;       // Offset at actual temperature
     int64_t _SENS;      // Sensitivity at actual temperature
-    int64_t _P;         // Temperature compensated pressure 10...1300 mbar (divide by 100)
+    int32_t _P;         // Temperature compensated pressure 10...1300 mbar (divide by 100)
     uint8_t buffer[14]; // do we need?
     uint8_t devAddr;
     void _getCalConstants();
+    boolean _debug;
+    uint8_t _model; // the suffix after ms5803.
     
 
 };

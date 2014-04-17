@@ -1,0 +1,22 @@
+###########################################
+# Syntax Coloring Map For LiquidCrystal_I2C
+###########################################
+
+###########################################
+# Datatypes (KEYWORD1)
+###########################################
+
+MS5803	KEYWORD1
+
+###########################################
+# Methods and Functions (KEYWORD2)
+###########################################
+initialize	KEYWORD2
+testConnection	KEYWORD2
+getTemperature	KEYWORD2
+getPressure	KEYWORD2
+debugCalConstants	KEYWORD2
+reset	KEYWORD2
+###########################################
+# Constants (LITERAL1)
+###########################################
