@@ -271,10 +271,10 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 	_SENS  -= sens2;
 	_OFF   -= off2;
 	if ( debug ) {
-		Serial.println("First order values:");
-		Serial.print("    _TEMP = "); Serial.println(_TEMP);
-		Serial.print("    _SENS = "); serialPrintln64(_SENS);
-		Serial.print("    _OFF = "); serialPrintln64(_OFF);
+		Serial.println("Second order values:");
+		Serial.print("    T2 = "); serialPrintln64(T2);
+		Serial.print("    sens2 = "); serialPrintln64(sens2);
+		Serial.print("    off2 = "); serialPrintln64(off2);
 	}
 	// Now pressure
 	switch (_model) {
