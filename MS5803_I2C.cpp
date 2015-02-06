@@ -35,7 +35,7 @@ THE SOFTWARE.
 */
 
 #include "MS5803_I2C.h"
-
+//#define MS5803_DEBUG
 	
 const char* CALIBRATION_CONSTANTS[] = {
 	"_c1_SENSt1",
@@ -89,11 +89,15 @@ bool MS5803::initialize(uint8_t model,bool debug) {
 		case (14): _model = BA14; break;
 		case (30): _model = BA30; break;
 		default:
+#ifdef MS5803_DEBUG
 			Serial.print("MS5803 Model entered ("); Serial.print(model); Serial.println(") is not valid/supported.");
+#endif
 			_model = INVALID; 
 			return 0;
 	}
+#ifdef MS5803_DEBUG
 	if ( debug ) Serial.print("MS5803 Model entered "); Serial.print(model); Serial.println("-ATM IS supported.");
+#endif
 	reset();
 	_getCalConstants(debug);
 	if ( _c1_SENSt1 == 0 ) _initialized = false; // Probably a better way to check this.
@@ -125,6 +129,7 @@ void MS5803::_getCalConstants(bool debug){
 	_c5_Tref =     (((uint16_t)_buffer[0] << 8) + _buffer[1]);
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C6,2,_buffer);
 	_c6_TEMPSENS = (((uint16_t)_buffer[0] << 8) + _buffer[1]);
+#ifdef MS5803_DEBUG
 	if (debug) {
 		for ( uint8_t i = 1 ; i <= 6; i++){
 			Serial.print(i);
@@ -133,15 +138,8 @@ void MS5803::_getCalConstants(bool debug){
 			Serial.print(" = ");
 			Serial.println(_getCalConstant(i));
 		}
-		/* Print out calibration constants
-		Serial.print("_c1_SENSt1 ");   Serial.println(_c1_SENSt1);
-		Serial.print("_c2_OFFt1 ");    Serial.println(_c2_OFFt1);
-		Serial.print("_c3_TCS ");      Serial.println(_c3_TCS);
-		Serial.print("_c4_TCO ");      Serial.println(_c4_TCO);
-		Serial.print("_c5_Tref ");     Serial.println(_c5_Tref);
-		Serial.print("_c6_TEMPSENS "); Serial.println(_c6_TEMPSENS);
-		*/
 	}
+#endif
 }
 
 int32_t MS5803::_getCalConstant(uint8_t constant_no){
@@ -165,6 +163,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 	//Now that we have a raw temperature, let's compute our actual.
 	_dT = _d2_temperature - ((int32_t)_c5_Tref << 8);
 	_TEMP =  (((int32_t)_dT * (int32_t)_c6_TEMPSENS) >> 23) + 2000;
+#ifdef MS5803_DEBUG
 	if ( debug ) {
 		Serial.println("Raw values:");
 		Serial.print("    _d2_temperature = "); Serial.println(_d2_temperature);
@@ -173,6 +172,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 		Serial.print("    _dT = "); Serial.println(_dT);
 		Serial.print("    _TEMP = "); Serial.println(_TEMP);
 	}
+#endif
 	// Every variant does the calculations differently, so...
 	int64_t T2 = 0;
 	int64_t off2 = 0;
@@ -262,20 +262,27 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 			sens2 = 0;
 			off2 = 0;
 	}
+#ifdef MS5803_DEBUG
 	if ( debug ) {
 		Serial.print("    _OFF = "); serialPrintln64(_OFF);
 		Serial.print("    _SENS = "); serialPrintln64(_SENS);
 	}
+#endif
 	 // Second Order
 	_TEMP  -= T2;
 	_SENS  -= sens2;
 	_OFF   -= off2;
+#ifdef MS5803_DEBUG
 	if ( debug ) {
-		Serial.println("First order values:");
+		Serial.println("Second order values:");
+		Serial.print("    T2 = "); serialPrintln64(T2);
+		Serial.print("    sens2 = "); serialPrintln64(sens2);
+		Serial.print("    off2 = "); serialPrintln64(off2);
 		Serial.print("    _TEMP = "); Serial.println(_TEMP);
 		Serial.print("    _SENS = "); serialPrintln64(_SENS);
 		Serial.print("    _OFF = "); serialPrintln64(_OFF);
 	}
+#endif
 	// Now pressure
 	switch (_model) {
 		case (BA05):  //MS5803-05-----------------------------------------------------------
@@ -293,10 +300,12 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 		default:
 			_P = 0;
 	}
+#ifdef MS5803_DEBUG
 	if ( debug ) {
 		Serial.println("Pressure:");
 		Serial.print("    _P = "); Serial.println(_P);
 	}
+#endif
 	// Conversions to common units
 	temp_C = (float)_TEMP / 100.0;
 	press_mBar = (float)_P / 10.0;
@@ -329,6 +338,7 @@ int32_t MS5803::_getADCconversion(measurement _measurement, precision _precision
 	}
 	I2Cdev::readBytes(_dev_address,MS5803_ADC_READ,read_length,_buffer,read_timeout);
 	result = ((uint32_t)_buffer[0] << 16) + ((uint32_t)_buffer[1] << 8) + _buffer[2];
+#ifdef MS5803_DEBUG
 	if (debug) {
 		Serial.print("Reading MS5803 ADC");
 		switch (_measurement) {
@@ -339,6 +349,7 @@ int32_t MS5803::_getADCconversion(measurement _measurement, precision _precision
 		Serial.print("    buffer[1] = "); Serial.println(_buffer[1]);
 		Serial.print("    buffer[2] = "); Serial.println(_buffer[2]);
 	}
+#endif
 	return result;
 }
 

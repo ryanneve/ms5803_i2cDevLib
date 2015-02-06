@@ -43,8 +43,10 @@ THE SOFTWARE.
 #include <avr/pgmspace.h>
 
 #define MS5803_ADDRESS
+// Should convert these to enum
 #define MS5803_ADDRESS_AD0_LOW     0x77 // address pin low (GND), default for InvenSense evaluation board
 #define MS5803_ADDRESS_AD0_HIGH    0x76 // address pin high (VCC)
+
 #define MS5803_DEFAULT_ADDRESS     MS5803_ADDRESS_AD0_LOW
 
 #define MS5803_RESET     0x1E
