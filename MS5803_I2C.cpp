@@ -35,7 +35,7 @@ THE SOFTWARE.
 */
 
 #include "MS5803_I2C.h"
-//#define MS5803_DEBUG
+
 	
 const char* CALIBRATION_CONSTANTS[] = {
 	"_c1_SENSt1",
