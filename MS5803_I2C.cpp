@@ -184,7 +184,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 			_SENS = ((int64_t)_c1_SENSt1 << 15 ) + ((((int64_t)_c3_TCS * (int64_t)_dT)) >> 8 );
 			// 2nd Order calculations
 			if ( _TEMP < 2000.0) {  // Is temperature below or above 20.00 deg C ?
-				T2    = 3 * (((int64_t)_dT * _dT) >> 31 );
+				T2 = 3 * pow(_dT,2)/(int64_t)pow(2,31);
 				off2  = 3 * pow((_TEMP - 2000.0),2);
 				sens2 = 7 * pow((_TEMP - 2000.0),2) / 8;
 				if ( _TEMP < 1500.0 ) sens2 += 2 * pow((_TEMP + 1500.0),2);// below 15C
@@ -203,7 +203,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 			_SENS = ((int64_t)_c1_SENSt1 << 16 ) + ((((int64_t)_c3_TCS * (int64_t)_dT)) >> 7 );
 			// 2nd Order calculations
 			if ( _TEMP < 2000.0) {  // Is temperature below or above 20.00 deg C ?
-				T2    = 3 * (((int64_t)_dT * _dT) >> 31 );
+				T2 = 3 * pow(_dT,2)/(int64_t)pow(2,31);
 				off2 = 61 * pow((_TEMP - 2000.0),2) / 16;
 				sens2 = 2 * pow(((int64_t)_TEMP - 2000.0),2);
 				if ( _TEMP < 1500.0 ) { // below 15C
@@ -222,7 +222,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 			_SENS = ((int64_t)_c1_SENSt1 << 17 ) + ((((int64_t)_c3_TCS * (int64_t)_dT)) >> 7 );
 			// 2nd Order calculations
 			if ( _TEMP < 2000.0) {  // Is temperature below or above 20.00 deg C ?
-				T2 = 3 * ((int64_t)_dT * _dT) >> 33;
+				T2 = 3 * pow(_dT,2)/(int64_t)pow(2,33);
 				off2 =  3 * pow((_TEMP - 2000.0),2) / 8;
 				sens2 = 7 * pow((_TEMP - 2000.0),2) / 8;
 				if ( _TEMP < 1500.0 ) { // below 15C
@@ -242,7 +242,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 			_SENS = ((int64_t)_c1_SENSt1 << 15 ) + ((((int64_t)_c3_TCS * (int64_t)_dT)) >> 8 );
 			// 2nd Order calculations
 			if ( _TEMP < 2000.0) {  // Is temperature below or above 20.00 deg C ?
-				T2 = 3 * (((int64_t)_dT * _dT) >> 33 );
+				T2 = 3 * pow(_dT,2)/(int64_t)pow(2,33);
 				off2 =  3 * pow((_TEMP - 2000.0),2) / 2;
 				sens2 = 5 * pow((_TEMP - 2000.0),2) / 8;
 				if ( _TEMP < 1500.0 ) { // below 15C
