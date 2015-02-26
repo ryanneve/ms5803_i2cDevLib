@@ -162,7 +162,8 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 	
 	//Now that we have a raw temperature, let's compute our actual.
 	_dT = _d2_temperature - ((int32_t)_c5_Tref << 8);
-	_TEMP =  (((int32_t)_dT * (int32_t)_c6_TEMPSENS) >> 23) + 2000;
+	double temp_dT = _dT / (double)pow(2,23);
+	_TEMP = 2000 +  (int32_t)(temp_dT * _c6_TEMPSENS);
 #ifdef MS5803_DEBUG
 	if ( debug ) {
 		Serial.println("Raw values:");
