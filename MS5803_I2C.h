@@ -100,12 +100,10 @@ class MS5803 {
 		void		setAddress(uint8_t address);
 		uint8_t		getAddress() {return _dev_address;}
 		bool		initialize(uint8_t model);
-		bool		initialize(uint8_t model, bool debug);
 		bool		testConnection();
 		uint16_t	reset();
 		void		setAtmospheric(float pressure) {press_atmospheric = pressure;}
-		void		calcMeasurements(precision _precision) {calcMeasurements(_precision,false);}
-		void		calcMeasurements(precision _precision,bool debug);
+		void		calcMeasurements(precision _precision);
 		// getters
 		int32_t		getD1Pressure() { return _d1_pressure; }
 		int32_t		getD2Temperature() { return _d2_temperature;}
@@ -113,6 +111,8 @@ class MS5803 {
 		float		getPress_mBar() {return press_mBar;}
 		float		getPress_kPa() {return press_kPa;}
 		bool		initialized() {return _initialized;}
+		bool		getDebug() { return _debug; }
+		void		setDebug(bool debug) { _debug = debug; }
 		
 		uint16_t	resolution;
 		float		temp_C;
@@ -124,9 +124,9 @@ class MS5803 {
 		float		depth_fresh;
 	protected:
 	private:
-		void		_getCalConstants(bool debug);
+		void		_getCalConstants();
 		int32_t		_getCalConstant(uint8_t constant_no);
-		int32_t		_getADCconversion(measurement _measurement, precision _precision, bool debug);
+		int32_t		_getADCconversion(measurement _measurement, precision _precision);
 		// Calibration Constants
 		int32_t		_c1_SENSt1; // Pressure Sensitivity
 		int32_t		_c2_OFFt1;  // Pressure Offset
@@ -148,6 +148,7 @@ class MS5803 {
 		uint8_t		_dev_address;
 		ms5803_model	_model; // the suffix after ms5803. E.g 2 for MS5803-02 indicates range.
 		bool		_initialized;
+		bool		_debug;
 };
 
 // Function prototype:

@@ -36,6 +36,8 @@ THE SOFTWARE.
 //#define MS5803_DEBUG
 #include "MS5803_I2C.h"
 
+const static uint8_t INIT_TRIES = 3;
+
 	
 const char* CALIBRATION_CONSTANTS[] = {
 	"_c1_SENSt1",
@@ -77,11 +79,8 @@ void MS5803::setAddress(uint8_t address) {
 * the internal register. It will then read the PROM
 */
 bool MS5803::initialize(uint8_t model) {
-	return initialize(model,false);
-}
-
-bool MS5803::initialize(uint8_t model,bool debug) {
 	press_atmospheric = 1.015; //default, can be changed.
+	_initialized = false;
 	switch (model) {
 		case ( 1): _model = BA01; break;
 		case ( 2): _model = BA02; break;
@@ -89,19 +88,18 @@ bool MS5803::initialize(uint8_t model,bool debug) {
 		case (14): _model = BA14; break;
 		case (30): _model = BA30; break;
 		default:
-#ifdef MS5803_DEBUG
-			Serial.print("MS5803 Model entered ("); Serial.print(model); Serial.println(") is not valid/supported.");
-#endif
+			Serial.print(F("MS5803 Model entered (")); Serial.print(model); Serial.println(F(") is not valid/supported."));
 			_model = INVALID; 
 			return 0;
 	}
-#ifdef MS5803_DEBUG
-	if ( debug ) Serial.print("MS5803 Model entered "); Serial.print(model); Serial.println("-ATM IS supported.");
-#endif
-	reset();
-	_getCalConstants(debug);
-	if ( _c1_SENSt1 == 0 ) _initialized = false; // Probably a better way to check this.
-	else _initialized = true;
+	//if ( _debug ) Serial.print("MS5803 Model entered "); Serial.print(model); Serial.println("-ATM IS supported.");
+	if (_debug) Serial.println(reset());
+	uint8_t tries = 0;
+	while (tries < INIT_TRIES & !_initialized) {
+		_getCalConstants(); // Seems to partially fail the first try sometimes.
+		if (_c1_SENSt1 != 0) _initialized = true; // Probably a better way to check this.
+		tries++;
+	}
 	return _initialized;
 }
 
@@ -115,7 +113,7 @@ uint16_t MS5803::reset(){
 	return I2Cdev::writeBytes(_dev_address, MS5803_RESET,0,_buffer);
 }
 
-void MS5803::_getCalConstants(bool debug){
+void MS5803::_getCalConstants(){
 	/* Query and parse calibration constants */
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C1,2,_buffer);
 	_c1_SENSt1 =   (((uint16_t)_buffer[0] << 8) + _buffer[1]);
@@ -129,8 +127,7 @@ void MS5803::_getCalConstants(bool debug){
 	_c5_Tref =     (((uint16_t)_buffer[0] << 8) + _buffer[1]);
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C6,2,_buffer);
 	_c6_TEMPSENS = (((uint16_t)_buffer[0] << 8) + _buffer[1]);
-#ifdef MS5803_DEBUG
-	if (debug) {
+	if (_debug) {
 		for ( uint8_t i = 1 ; i <= 6; i++){
 			Serial.print(i);
 			Serial.print(": ");
@@ -139,7 +136,6 @@ void MS5803::_getCalConstants(bool debug){
 			Serial.println(_getCalConstant(i));
 		}
 	}
-#endif
 }
 
 int32_t MS5803::_getCalConstant(uint8_t constant_no){
@@ -155,17 +151,16 @@ int32_t MS5803::_getCalConstant(uint8_t constant_no){
 }
 
 
-void MS5803::calcMeasurements(precision _precision,bool debug){
+void MS5803::calcMeasurements(precision _precision){
 	// Get raw temperature and pressure values
-	_d2_temperature = _getADCconversion(TEMPERATURE, _precision,debug);
-	_d1_pressure = _getADCconversion(PRESSURE, _precision,debug);
+	_d2_temperature = _getADCconversion(TEMPERATURE, _precision);
+	_d1_pressure = _getADCconversion(PRESSURE, _precision);
 	
 	//Now that we have a raw temperature, let's compute our actual.
 	_dT = _d2_temperature - ((int32_t)_c5_Tref << 8);
 	double temp_dT = _dT / (double)pow(2,23);
 	_TEMP = 2000 +  (int32_t)(temp_dT * _c6_TEMPSENS);
-#ifdef MS5803_DEBUG
-	if ( debug ) {
+	if ( _debug ) {
 		Serial.println("Raw values:");
 		Serial.print("    _d2_temperature = "); Serial.println(_d2_temperature);
 		Serial.print("    _d1_pressure = "); Serial.println(_d1_pressure);
@@ -173,7 +168,6 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 		Serial.print("    _dT = "); Serial.println(_dT);
 		Serial.print("    _TEMP = "); Serial.println(_TEMP);
 	}
-#endif
 	// Every variant does the calculations differently, so...
 	int64_t T2 = 0;
 	int64_t off2 = 0;
@@ -263,18 +257,15 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 			sens2 = 0;
 			off2 = 0;
 	}
-#ifdef MS5803_DEBUG
-	if ( debug ) {
+	if ( _debug ) {
 		Serial.print("    _OFF = "); serialPrintln64(_OFF);
 		Serial.print("    _SENS = "); serialPrintln64(_SENS);
 	}
-#endif
 	 // Second Order
 	_TEMP  -= T2;
 	_SENS  -= sens2;
 	_OFF   -= off2;
-#ifdef MS5803_DEBUG
-	if ( debug ) {
+	if ( _debug ) {
 		Serial.println("Second order values:");
 		Serial.print("    T2 = "); serialPrintln64(T2);
 		Serial.print("    sens2 = "); serialPrintln64(sens2);
@@ -283,7 +274,6 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 		Serial.print("    _SENS = "); serialPrintln64(_SENS);
 		Serial.print("    _OFF = "); serialPrintln64(_OFF);
 	}
-#endif
 	// Now pressure
 	switch (_model) {
 		case (BA05):  //MS5803-05-----------------------------------------------------------
@@ -301,12 +291,10 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 		default:
 			_P = 0;
 	}
-#ifdef MS5803_DEBUG
-	if ( debug ) {
+	if ( _debug ) {
 		Serial.println("Pressure:");
 		Serial.print("    _P = "); Serial.println(_P);
 	}
-#endif
 	// Conversions to common units
 	temp_C = (float)_TEMP / 100.0;
 	press_mBar = (float)_P / 10.0;
@@ -316,7 +304,7 @@ void MS5803::calcMeasurements(precision _precision,bool debug){
 	depth_fresh = (press_mBar/100) * 1.019716;
 }
 
-int32_t MS5803::_getADCconversion(measurement _measurement, precision _precision,bool debug){
+int32_t MS5803::_getADCconversion(measurement _measurement, precision _precision){
 	// Retrieve ADC measurement from the device.
 	// Select measurement type and precision
 	uint32_t result;
@@ -332,15 +320,14 @@ int32_t MS5803::_getADCconversion(measurement _measurement, precision _precision
 	switch( _precision )
 	{
 		case ADC_256 : delay(1); break;
-		case ADC_512 : delay(3); break;
-		case ADC_1024: delay(4); break;
-		case ADC_2048: delay(6); break;
-		case ADC_4096: delay(10); break;
+		case ADC_512 : delay(3 >> CLKPR); break;
+		case ADC_1024: delay(4 >> CLKPR); break;
+		case ADC_2048: delay(6 >> CLKPR); break;
+		case ADC_4096: delay(10 >> CLKPR); break;
 	}
 	I2Cdev::readBytes(_dev_address,MS5803_ADC_READ,read_length,_buffer,read_timeout);
 	result = ((uint32_t)_buffer[0] << 16) + ((uint32_t)_buffer[1] << 8) + _buffer[2];
-#ifdef MS5803_DEBUG
-	if (debug) {
+	if (_debug) {
 		Serial.print("Reading MS5803 ADC");
 		switch (_measurement) {
 			case PRESSURE:    Serial.println(" Pressure: "   ); break;
@@ -350,7 +337,6 @@ int32_t MS5803::_getADCconversion(measurement _measurement, precision _precision
 		Serial.print("    buffer[1] = "); Serial.println(_buffer[1]);
 		Serial.print("    buffer[2] = "); Serial.println(_buffer[2]);
 	}
-#endif
 	return result;
 }
 
