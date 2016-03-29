@@ -95,10 +95,19 @@ bool MS5803::initialize(uint8_t model) {
 	//if ( _debug ) Serial.print("MS5803 Model entered "); Serial.print(model); Serial.println("-ATM IS supported.");
 	if (_debug) Serial.println(reset());
 	uint8_t tries = 0;
-	while (tries < INIT_TRIES & !_initialized) {
+	do {
 		_getCalConstants(); // Seems to partially fail the first try sometimes.
-		if (_c1_SENSt1 != 0) _initialized = true; // Probably a better way to check this.
+		if (_c1_SENSt1 && _c2_OFFt1 && _c3_TCS && _c4_TCO && _c5_Tref && _c6_TEMPSENS ) _initialized = true; // They must all be non-0
 		tries++;
+	} while (!_initialized && ( tries < INIT_TRIES) );
+	if (_debug) {
+		for ( uint8_t i = 1 ; i <= 6; i++){
+			Serial.print(i);
+			Serial.print(": ");
+			Serial.print(CALIBRATION_CONSTANTS[i-1]);
+			Serial.print(" = ");
+			Serial.println(_getCalConstant(i));
+		}
 	}
 	return _initialized;
 }
@@ -127,15 +136,6 @@ void MS5803::_getCalConstants(){
 	_c5_Tref =     (((uint16_t)_buffer[0] << 8) + _buffer[1]);
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C6,2,_buffer);
 	_c6_TEMPSENS = (((uint16_t)_buffer[0] << 8) + _buffer[1]);
-	if (_debug) {
-		for ( uint8_t i = 1 ; i <= 6; i++){
-			Serial.print(i);
-			Serial.print(": ");
-			Serial.print(CALIBRATION_CONSTANTS[i-1]);
-			Serial.print(" = ");
-			Serial.println(_getCalConstant(i));
-		}
-	}
 }
 
 int32_t MS5803::_getCalConstant(uint8_t constant_no){
