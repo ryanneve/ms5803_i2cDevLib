@@ -219,7 +219,7 @@ void MS5803::calcMeasurements(precision _precision){
 				T2 = 3 * pow(_dT,2)/(int64_t)pow(2,33);
 				off2 =  3 * pow((_TEMP - 2000.0),2) / 8;
 				sens2 = 7 * pow((_TEMP - 2000.0),2) / 8;
-				if ( _TEMP < 1500.0 ) { // below 15C
+				if ( _TEMP < -1500.0 ) { // below -15C
 					sens2 += 3 * pow((_TEMP + 1500.0),2);
 				}
 			}
