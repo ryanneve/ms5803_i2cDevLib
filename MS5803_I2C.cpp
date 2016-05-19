@@ -123,6 +123,11 @@ uint16_t MS5803::reset(){
 	return I2Cdev::writeBytes(_dev_address, MS5803_RESET,0,_buffer);
 }
 
+void MS5803::setAtmospheric(precision _precision) {
+	calcMeasurements(_precision); // Get current values
+	_press_atm_mBar = (float)_P / 10.0;
+}
+
 void MS5803::_getCalConstants(){
 	/* Query and parse calibration constants */
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C1,2,_buffer);

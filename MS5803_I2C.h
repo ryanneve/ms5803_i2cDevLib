@@ -94,30 +94,31 @@ const static float FRESH_WATER_CONSTANT = 1.019716; // kg/m^3
 const static float BAR_IN_PSI = 14.50377;
 
 class MS5803 {
-	public:
-		MS5803();
-		MS5803(uint8_t address);
-	
-		void		setAddress(uint8_t address);
-		uint8_t		getAddress() {return _dev_address;}
-		bool		initialize(uint8_t model);
-		bool		initialized() {return _initialized;}
-		bool		testConnection();
-		void		calcMeasurements(precision _precision);	// Here's where the heavy lifting occurs.
-		uint16_t	reset();
+public:
+	MS5803();
+	MS5803(uint8_t address);
 
-		// Setters
-		void		setAtmospheric(float pressure) {_press_atm_mBar = pressure;}
-		void		setDebug(bool debug) { _debug = debug; }
+	void		setAddress(uint8_t address);
+	uint8_t		getAddress() { return _dev_address; }
+	bool		initialize(uint8_t model);
+	bool		initialized() { return _initialized; }
+	bool		testConnection();
+	void		calcMeasurements(precision _precision);	// Here's where the heavy lifting occurs.
+	uint16_t	reset();
 
-		// Getters
-		bool		getDebug() { return _debug; }
-		float		getTemp_C() {return (float)_TEMP / 100.0;}
-		float		getPress_mBar() {return (float)_P / 10.0;}
-		float		getPress_kPa() {return (float)_P / 100.0;}
-		float		getPress_gauge() {return ((float)_P / 10.0) - _press_atm_mBar;}
-		float		getPress_psi() {return (((float)_P / 10.0) - _press_atm_mBar) * BAR_IN_PSI;}
-		float		getDepthFresh_m() {return ((float)_P/1000.0) * FRESH_WATER_CONSTANT;}
+	// Setters
+	void		setAtmospheric(precision _precision);
+	void		setDebug(bool debug) { _debug = debug; }
+
+	// Getters
+	bool		getDebug() { return _debug; }
+	float		getTemp_C() { return (float)_TEMP / 100.0; }
+	float		getPress_mBar() { return (float)_P / 10.0; }
+	float		getPress_kPa() { return (float)_P / 100.0; }
+	float		getPress_gauge() { return ((float)_P / 10.0) - _press_atm_mBar; }
+	float		getPress_psi() { return (((float)_P / 10.0) - _press_atm_mBar) * BAR_IN_PSI; }
+	float		getDepthFresh_m() { return ((float)_P / 1000.0) * FRESH_WATER_CONSTANT; }
+	float		getAtmospheric() { return _press_atm_mBar; }
 
 
 	protected:
