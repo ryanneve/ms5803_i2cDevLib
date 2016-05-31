@@ -1,6 +1,6 @@
 // I2Cdev library collection - MS5803 I2C device class
 // Based on Measurement Specialties MS5803 document, 3/25/2013 (DA5803-01BA_010)
-// 3/29/2016 by Ryan Neve <Ryan@PlanktosInstruments.com>
+// 5/29/2016 by Ryan Neve <Ryan@PlanktosInstruments.com>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
 //
 // Changelog:
@@ -12,7 +12,7 @@
 
 /* ============================================
 I2Cdev device library code is placed under the MIT license
-Copyright (c) 2014 Ryan Neve
+Copyright (c) 2016 Ryan Neve
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,8 @@ THE SOFTWARE.
 const static uint8_t INIT_TRIES = 3;
 const static uint16_t PRESS_ATM_MBAR_DEFAULT = 1015;
 
-	
+const static uint8_t MS5803_I2C_ADDRESS[2] = { 0x77,0x78 };
+
 const char* CALIBRATION_CONSTANTS[] = {
 	"_c1_SENSt1",
 	"_c2_OFFt1",
@@ -51,13 +52,10 @@ const char* CALIBRATION_CONSTANTS[] = {
 /** Default constructor, uses default I2C address.
 * @see MPU6050_DEFAULT_ADDRESS
 */
-MS5803::MS5803() { MS5803(MS5803_DEFAULT_ADDRESS);}
+MS5803::MS5803() { MS5803(MS5803_I2C_ADDRESS[0]);}
 
 /** Specific address constructor.
 * @param address I2C address
-* @see MS5803_DEFAULT_ADDRESS
-* @see MS5803_ADDRESS_AD0_LOW
-* @see MS5803_ADDRESS_AD0_HIGH
 */
 MS5803::MS5803(uint8_t address) {
 	setAddress(address);
@@ -94,12 +92,20 @@ bool MS5803::initialize(uint8_t model) {
 			return 0;
 	}
 	if (_debug) Serial.println(reset());
+	bool address_switched = false;
 	uint8_t tries = 0;
 	do {
-		_getCalConstants(); // Seems to partially fail the first try sometimes.
-		if (_c1_SENSt1 && _c2_OFFt1 && _c3_TCS && _c4_TCO && _c5_Tref && _c6_TEMPSENS ) _initialized = true; // They must all be non-0
+		_initialized = _getCalConstants(); // Seems to partially fail the first try sometimes. They must all be non-0 to be true
 		tries++;
-	} while (!_initialized && ( tries < INIT_TRIES) );
+		if (tries >= INIT_TRIES && !address_switched) {
+			// We're about to fail, so try the other address.
+			if (_dev_address == MS5803_I2C_ADDRESS[0]) _dev_address = MS5803_I2C_ADDRESS[1];
+			else _dev_address = MS5803_I2C_ADDRESS[0];
+			tries = 0;
+			address_switched = true;
+		}
+	} while (!_initialized && (tries < INIT_TRIES));
+	// if !_initialized, 
 	if (_debug) {
 		for ( uint8_t i = 1 ; i <= 6; i++){
 			Serial.print(i);
@@ -107,6 +113,10 @@ bool MS5803::initialize(uint8_t model) {
 			Serial.print(CALIBRATION_CONSTANTS[i-1]);
 			Serial.print(" = ");
 			Serial.println(_getCalConstant(i));
+		}
+		if (address_switched) {
+			Serial.print(F("Changed address to "));
+			Serial.println(_dev_address);
 		}
 	}
 	return _initialized;
@@ -128,7 +138,7 @@ void MS5803::setAtmospheric(precision _precision) {
 	_press_atm_mBar = (float)_P / 10.0;
 }
 
-void MS5803::_getCalConstants(){
+bool MS5803::_getCalConstants(){
 	/* Query and parse calibration constants */
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C1,2,_buffer);
 	_c1_SENSt1 =   (((uint16_t)_buffer[0] << 8) + _buffer[1]);
@@ -142,6 +152,7 @@ void MS5803::_getCalConstants(){
 	_c5_Tref =     (((uint16_t)_buffer[0] << 8) + _buffer[1]);
 	I2Cdev::readBytes(_dev_address,MS5803_PROM_C6,2,_buffer);
 	_c6_TEMPSENS = (((uint16_t)_buffer[0] << 8) + _buffer[1]);
+	return _c1_SENSt1 && _c2_OFFt1 && _c3_TCS && _c4_TCO && _c5_Tref && _c6_TEMPSENS;
 }
 
 int32_t MS5803::_getCalConstant(uint8_t constant_no){
