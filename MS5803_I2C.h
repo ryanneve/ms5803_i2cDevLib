@@ -84,7 +84,7 @@ enum ms5803_model {
 };
 
 
-const static float FRESH_WATER_CONSTANT = 1.019716; // kg/m^3
+const static float FRESH_WATER_CONSTANT = 0.0108; // kg/m^3
 const static float BAR_IN_PSI = 14.50377;
 
 class MS5803 {
@@ -111,7 +111,7 @@ public:
 	float		getPress_kPa() { return (float)_P / 100.0; }
 	float		getPress_gauge() { return ((float)_P / 10.0) - _press_atm_mBar; }
 	float		getPress_psi() { return (((float)_P / 10.0) - _press_atm_mBar) * BAR_IN_PSI; }
-	float		getDepthFresh_m() { return ((float)_P / 1000.0) * FRESH_WATER_CONSTANT; }
+	float		getDepthFresh_m() { return ((getPress_mBar() - getAtmospheric()) * FRESH_WATER_CONSTANT); }
 	float		getAtmospheric() { return _press_atm_mBar; }
 
 
