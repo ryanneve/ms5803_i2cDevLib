@@ -36,7 +36,7 @@ THE SOFTWARE.
 #include "MS5803_I2C.h"
 
 const static uint8_t INIT_TRIES = 3;
-const static uint16_t PRESS_ATM_MBAR_DEFAULT = 1015;
+const static float PRESS_ATM_MBAR_DEFAULT = 1013.25;
 
 const static uint8_t MS5803_I2C_ADDRESS[2] = { 0x77,0x78 };
 
@@ -66,7 +66,7 @@ MS5803::MS5803(uint8_t address) {
 	_c4_TCO			= 0;
 	_c5_Tref		= 0;
 	_c6_TEMPSENS	= 0;
-	_press_atm_mBar = (float)PRESS_ATM_MBAR_DEFAULT/1000.0; //default, can be changed with setAtmospheric() 
+	_press_atm_mBar = PRESS_ATM_MBAR_DEFAULT; //default, can be changed with setAtmospheric() 
 }
 // Because sometimes you want to set the address later.
 void MS5803::setAddress(uint8_t address) {
@@ -135,7 +135,7 @@ uint16_t MS5803::reset(){
 
 void MS5803::setAtmospheric(precision _precision) {
 	calcMeasurements(_precision); // Get current values
-	_press_atm_mBar = (float)_P / 10.0;
+	_press_atm_mBar = getPress_mBar();
 }
 
 bool MS5803::_getCalConstants(){

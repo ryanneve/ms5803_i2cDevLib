@@ -141,7 +141,7 @@ public:
 		// Temperature compensated pressure
 		int64_t		_OFF;		// First Order Offset at actual temperature // Offset - float
 		int64_t		_SENS;		// Sensitivity at actual temperature // Sensitivity - float
-		int32_t		_P;			// Temperature compensated pressure 10...1300 mbar (divide by 100 to get mBar)
+		int32_t		_P;			// Temperature compensated pressure 100...13000 (divide by 100 to get mBar)
 		float		_press_atm_mBar;	// Atmospheric pressure
 
 };
